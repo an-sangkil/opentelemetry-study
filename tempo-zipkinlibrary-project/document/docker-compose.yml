@@ -1,0 +1,23 @@
+version: '3'
+services:
+  tempo:
+    image: grafana/tempo:latest
+    container_name: tempo
+    command: -config.file=/etc/tempo.yaml
+    volumes:
+      - ./tempo-data:/tmp/tempo
+      - ./tempo.yaml:/etc/tempo.yaml
+    ports:
+      - "9411:9411"
+      - "3200:3200"
+    networks:
+      - tracing
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - tracing
+networks:
+  tracing:
