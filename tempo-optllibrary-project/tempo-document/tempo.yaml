@@ -1,0 +1,33 @@
+server:
+  http_listen_port: 9411
+  grpc_listen_port: 4317
+
+distributor:
+  receivers:
+    jaeger:
+      protocols:
+        grpc:
+        thrift_http:
+        thrift_binary:
+        thrift_compact:
+    otlp:
+      protocols:
+        grpc:
+        http:
+  queue:
+    processor:
+      workers: 10
+      max_backoff: 5s
+
+compactor:
+  compaction:
+    compaction_window: 5m
+
+storage:
+  trace:
+    backend: local
+    local:
+      path: /var/lib/tempo/traces
+
+overrides:
+  max_traces_per_user: 100000

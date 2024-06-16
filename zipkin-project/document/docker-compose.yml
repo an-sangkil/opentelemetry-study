@@ -4,7 +4,6 @@ services:
     image: openzipkin/zipkin:latest
     container_name: zipkin
     ports:
-      - "9410:9410"
       - "9411:9411"
     networks:
       - tracing
