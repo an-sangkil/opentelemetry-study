@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestClient;
 
+import java.util.Random;
+
 @Slf4j
 @RestController
 public class AdZipkinController {
@@ -29,14 +31,19 @@ public class AdZipkinController {
         Span currentSpan = tracer.currentSpan();
         String newSpanId = IdGenerator.random().generateSpanId().toString();
 
+        String traceId = currentSpan != null ? currentSpan.context().traceId() : generateNewId();
+        String parentSpanId = currentSpan != null ? currentSpan.context().spanId() : null;
+
         var adServerResult = restClient.get()
                 .uri("http://localhost:9000/ad/server/zipkin/hello")
-                .header("traceparent", currentSpan != null ? currentSpan.context().traceId() : null)
-                .header("X-B3-TraceId", currentSpan != null ? currentSpan.context().traceId() : null)
-                .header("X-B3-SpanId", newSpanId) // 새로운 SpanId 사용
-                .header("X-B3-ParentSpanId", currentSpan != null ? currentSpan.context().spanId() : null) // 부모 SpanId 추가
+                .header("X-B3-TraceId", traceId)
+                .header("X-B3-SpanId", newSpanId)
+                .header("X-B3-ParentSpanId", parentSpanId)
+                .header("X-B3-Sampled", "1")
                 .retrieve()
                 .body(String.class);
+
+        log.debug("data = {}", adServerResult);
 
 
 
@@ -59,5 +66,10 @@ public class AdZipkinController {
         log.debug("data = {}", adServerResult);
 
         return "Hello World zipkin";
+    }
+
+
+    private String generateNewId() {
+        return Long.toHexString(new Random().nextLong());
     }
 }
