@@ -1,4 +1,4 @@
-package com.ad.server.adcreatezipkin;
+package com.ad.server.adcreatezipkin.config;
 
 //import io.opentelemetry.extension.trace.propagation.B3Propagator;
 //import org.springframework.context.annotation.Bean;
