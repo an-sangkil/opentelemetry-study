@@ -19,8 +19,6 @@ storage:
     local:
       path: /tmp/tempo/traces
 
-
-
 compactor:
   compaction:
     compaction_window: 1h

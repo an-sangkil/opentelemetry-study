@@ -1,6 +1,10 @@
 server:
-  http_listen_port: 9411
+  http_listen_port: 3100
   grpc_listen_port: 4317
+
+
+# auth_enabled: false
+
 
 distributor:
   receivers:
@@ -14,14 +18,18 @@ distributor:
       protocols:
         grpc:
         http:
-  queue:
-    processor:
-      workers: 10
-      max_backoff: 5s
 
-compactor:
-  compaction:
-    compaction_window: 5m
+#ingester:
+#  max_block_duration: 5m
+#  trace_idle_period: "30s"
+#  flush_check_period: "1m"
+#  max_block_bytes: 1000000  # 1MB
+#  #encoding: "snappy"
+#  complete_block_timeout: "5m"
+#
+#compactor:
+#  compaction:
+#    compaction_window: 5m
 
 storage:
   trace:

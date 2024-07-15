@@ -14,9 +14,13 @@ services:
       - tracing
   grafana:
     image: grafana/grafana:latest
-    container_name: grafana
+    container_name: grafana-zipkin-tempo
     ports:
       - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./grafana-data:/var/lib/grafana
     networks:
       - tracing
 networks:
