@@ -1,2 +1,8 @@
 
 .idea/
+
+tempo-optllibrary-project/tempo-document/grafana-data/
+
+tempo-zipkinlibrary-project/tempo-zipkinlib-document/grafana-data/
+
+tempo-zipkinlibrary-project/tempo-zipkinlib-document/tempo-data/
