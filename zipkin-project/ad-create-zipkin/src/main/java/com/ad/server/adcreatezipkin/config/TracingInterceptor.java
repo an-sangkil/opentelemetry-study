@@ -55,6 +55,7 @@ public class TracingInterceptor implements HandlerInterceptor {
 
         Span span = tracer.spanBuilder(request.getMethod() + " " + request.getRequestURI()).startSpan();
 
+        // get method 에대한 parameter, span 생성
         for (Map.Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
             String key = entry.getKey();
             String[] values = entry.getValue();
@@ -65,6 +66,7 @@ public class TracingInterceptor implements HandlerInterceptor {
             }
         }
 
+        // post method 에대한 parameter span 생성
         if ("POST".equalsIgnoreCase(request.getMethod())) {
             StringBuilder stringBuilder = new StringBuilder();
             BufferedReader reader = request.getReader();

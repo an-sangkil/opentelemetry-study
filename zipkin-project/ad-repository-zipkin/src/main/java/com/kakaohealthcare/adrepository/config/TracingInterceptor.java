@@ -34,7 +34,7 @@ public class TracingInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws IOException {
 
-        // custom header 에 대한 처리
+        // custom header 에 대한 처리 (프론트로부터 traceId 전파를 하길 원할때 사용하는 구문)
         String customTraceId = request.getHeader("X-Custom-TraceId");
         if (customTraceId != null && !customTraceId.isEmpty()) {
             SpanContext spanContext = SpanContext.create(
