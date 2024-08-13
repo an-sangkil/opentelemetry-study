@@ -21,7 +21,7 @@ import java.util.Objects;
 @RestController
 public class AdRepositoryController {
 
-    @PostMapping("/ad/save")
+    @PostMapping("/repository/ad/save")
     public Mono<String> adSave(ServerHttpRequest serverRequest, Campaign campaign) {
 
 
@@ -36,7 +36,7 @@ public class AdRepositoryController {
         return Mono.just("ad save...");
     }
 
-    @DeleteMapping("/ad/delete")
+    @DeleteMapping("/repository/ad/delete")
     public Mono<String> adDelete(ServerHttpRequest serverRequest) {
 
 
@@ -45,7 +45,7 @@ public class AdRepositoryController {
             log.info("key {} value {}", s, strings);
         });
 
-        log.info("path{} , request body {}", "/ad/delete");
+        log.info("path{} , request body {}", "/ad/delete",  serverRequest.getBody().toString());
 
 
         return Mono.just("ad delete...");
