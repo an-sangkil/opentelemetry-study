@@ -1,6 +1,7 @@
-package com.ad.adrepository.controller;
+package com.ad.adrepository.service;
 
 import com.ad.adrepository.config.Traced;
+import com.ad.adrepository.controller.Campaign;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
