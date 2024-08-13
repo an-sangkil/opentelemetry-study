@@ -26,7 +26,9 @@ repositories {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
 
+    //implementation 'io.opentelemetry:opentelemetry-extension-annotations'
     implementation 'io.micrometer:micrometer-tracing-bridge-otel'    // open telemetry
     implementation 'io.opentelemetry:opentelemetry-exporter-zipkin'  // open telemetry exporter zipkin
 

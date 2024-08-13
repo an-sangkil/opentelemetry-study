@@ -1,7 +1,5 @@
 package com.ad.adrepository.config;
 
-import io.micrometer.observation.Observation;
-import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.tracing.Span;
 import io.micrometer.tracing.Tracer;
 import org.springframework.web.reactive.function.client.ClientRequest;
