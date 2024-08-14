@@ -34,6 +34,7 @@ public class TracingFilter implements WebFilter {
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         String customTraceId = exchange.getRequest().getHeaders().getFirst("X-Custom-TraceId");
 
+        // 커스텀 테그가 있는지 확인하고 있으면 해당 커스텀 테그의 스판을 사용.
         if (customTraceId != null && !customTraceId.isEmpty()) {
             SpanContext spanContext = SpanContext.create(
                     customTraceId,
@@ -49,8 +50,8 @@ public class TracingFilter implements WebFilter {
             }
         }
 
+        // 새로운 tracer span 생성
         Span span = tracer.spanBuilder(exchange.getRequest().getMethod().name() + " " + exchange.getRequest().getURI()).startSpan();
-
         exchange.getRequest().getQueryParams().forEach((key, values) -> {
             if (values != null && values.size() == 1) {
                 span.setAttribute("http.param." + key, values.get(0));

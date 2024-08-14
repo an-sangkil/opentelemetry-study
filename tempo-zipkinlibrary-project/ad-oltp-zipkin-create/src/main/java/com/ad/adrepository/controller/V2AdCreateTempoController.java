@@ -1,5 +1,6 @@
 package com.ad.adrepository.controller;
 
+import com.ad.adrepository.service.AdCreateService;
 import io.micrometer.tracing.Span;
 import io.micrometer.tracing.Tracer;
 import io.opentelemetry.sdk.trace.IdGenerator;
@@ -12,6 +13,10 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.Random;
 
+/**
+ * V2
+ * 서비스를 분리하여, method tracing 되는지 확인 하기 위한 컨트롤러
+ */
 @Slf4j
 @RequiredArgsConstructor
 @RestController
@@ -24,6 +29,9 @@ public class V2AdCreateTempoController {
     final private AdCreateService adCreateService;
 
 
+    /**
+     * 서비스를 분리하여, method tracing 되는지 확인 하기 위한 V2
+     */
     @PostMapping("/v2/ad/save")
     public String adSave(Campaign campaign) {
 

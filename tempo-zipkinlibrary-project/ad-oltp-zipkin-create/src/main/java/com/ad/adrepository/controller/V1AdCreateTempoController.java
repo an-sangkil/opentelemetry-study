@@ -12,6 +12,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.Random;
 
+/**
+ * V2
+ */
 @Slf4j
 @RequiredArgsConstructor
 @RestController
