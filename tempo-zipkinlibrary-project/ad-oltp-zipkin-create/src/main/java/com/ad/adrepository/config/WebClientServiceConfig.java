@@ -2,12 +2,15 @@ package com.ad.adrepository.config;
 
 import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.tracing.Tracer;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.context.Context;
 import io.opentelemetry.context.propagation.ContextPropagators;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.reactive.function.client.*;
 import reactor.core.publisher.Mono;
 import reactor.netty.resources.ConnectionProvider;
@@ -41,15 +44,30 @@ public class WebClientServiceConfig {
         // WebClient.Builder를 사용하여 WebClient 생성
         WebClient webClient = webClientBuilder
                 .observationRegistry(observationRegistry)
-                .filter(new TracingWebClientFilter(tracer)) // 추적 필터 추가
+                //.filter(new TracingWebClientFilter(propagators,tracer)) // 추적 필터 추가
                 .filter(ExchangeFilterFunction.ofRequestProcessor(clientRequest -> {
-
                     clientRequest.headers().forEach((s, strings) -> {
                         log.info( "key {} , value {}", s, strings);
                     });
-
                     return Mono.just(clientRequest);
                 }))
+
+
+
+                .filter((request, next) -> {
+                    Span span = Span.current();
+                    if (span != null) {
+                        Context context = Context.current();
+                        ClientRequest newRequest = ClientRequest.from(request)
+                                .headers(headers -> propagators.getTextMapPropagator().inject(context, headers, HttpHeaders::add))
+                                .build();
+                        return next.exchange(newRequest);
+                    } else {
+                        return next.exchange(request);
+                    }
+                })
+//
+
                 .build();
 
         return webClient;
