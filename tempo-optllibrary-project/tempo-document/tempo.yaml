@@ -1,23 +1,25 @@
 server:
-  http_listen_port: 3100
-  grpc_listen_port: 4317
+  http_listen_port: 3200  # Tempo UI 및 HTTP 서버 포트 (Tempo의 웹 UI 등)
+  #grpc_listen_port: 4317  # gRPC 서버 포트, 주로 OTLP gRPC 데이터 수신
+  http_listen_address: 0.0.0.0
 
-
+# 권한 처리
 # auth_enabled: false
 
 
 distributor:
   receivers:
-    jaeger:
-      protocols:
-        grpc:
-        thrift_http:
-        thrift_binary:
-        thrift_compact:
     otlp:
       protocols:
-        grpc:
-        http:
+        grpc: # OTLP gRPC 프로토콜 수신 (기본 포트: 4317)
+        http: # OTLP HTTP 프로토콜 수신 (기본 포트: 4318)
+#    jaeger  사용시 활성화 할것
+#    jaeger:
+#      protocols:
+#        grpc:
+#        thrift_http:
+#        thrift_binary:
+#        thrift_compact:
 
 #ingester:
 #  max_block_duration: 5m
@@ -35,7 +37,8 @@ storage:
   trace:
     backend: local
     local:
-      path: /var/lib/tempo/traces
+      path: /tmp/tempo/traces
 
-overrides:
-  max_traces_per_user: 100000
+#  사용자당 최대 추적 갯수
+#overrides:
+#  max_traces_per_user: 100000

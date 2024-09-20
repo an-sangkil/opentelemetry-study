@@ -41,6 +41,8 @@ public class WebClientServiceConfig {
      */
     @Bean
     public WebClient webClient(WebClient.Builder webClientBuilder, ObservationRegistry observationRegistry) {
+
+        log.info("webclientConfig >> trace info >> tracer {}", tracer);
         // WebClient.Builder를 사용하여 WebClient 생성
         WebClient webClient = webClientBuilder
                 .observationRegistry(observationRegistry)
@@ -51,23 +53,30 @@ public class WebClientServiceConfig {
                     });
                     return Mono.just(clientRequest);
                 }))
-
-
-
-                .filter((request, next) -> {
-                    Span span = Span.current();
-                    if (span != null) {
-                        Context context = Context.current();
-                        ClientRequest newRequest = ClientRequest.from(request)
-                                .headers(headers -> propagators.getTextMapPropagator().inject(context, headers, HttpHeaders::add))
+                .filter((request, next) -> Mono.deferContextual(ctx -> {
+                    Span span = ctx.getOrDefault("currentSpan", Span.current());
+                    if (span != null && span.getSpanContext().isValid()) {
+                        log.info("webClientConfig >> traceId = {}, spanId = {}", span.getSpanContext().getTraceId(), span.getSpanContext().getSpanId());
+                        ClientRequest clientRequest = ClientRequest.from(request)
+                                .header("traceparent", span.getSpanContext().getTraceId()) // Trace ID 헤더에 추가
                                 .build();
-                        return next.exchange(newRequest);
-                    } else {
-                        return next.exchange(request);
-                    }
-                })
-//
 
+                        return next.exchange(clientRequest);
+                    }
+                    return next.exchange(request);
+                }))
+//                .filter((request, next) -> {
+//                    Span span = Span.current();
+//                    if (span != null) {
+//                        Context context = Context.current();
+//                        ClientRequest newRequest = ClientRequest.from(request)
+//                                .headers(headers -> propagators.getTextMapPropagator().inject(context, headers, HttpHeaders::add))
+//                                .build();
+//                        return next.exchange(newRequest);
+//                    } else {
+//                        return next.exchange(request);
+//                    }
+//                })
                 .build();
 
         return webClient;
