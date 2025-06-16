@@ -1,0 +1,48 @@
+###
+GET http://localhost:8080/order
+
+###
+PATCH http://localhost:8080/cancel
+
+###
+GET /interface/api/test
+
+###
+POST http://localhost:8080/v1/collect/data
+Content-Type: application/x-www-form-urlencoded
+
+###
+POST http://localhost:8080/api/auth/sign-in
+Content-Type: application/json
+
+{
+  "appUserId": "",
+  "clientToken": ""
+}
+
+###
+POST http://localhost:8080/v1/collect/data
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJteWRhdGEgdXNlciB0b2tlbiIsImFwcFVzZXJJZCI6IjEiLCJ1dGlsaXphdGlvbklkIjoiODAwMDA1NjIiLCJ1c2VySWQiOiJBMDAwMDAxIiwiZXhwIjoxNzUxNzk1MTI1fQ.aJgtywN6aJzaAlmVRZvnX6jAxC4F1xCLyXhDRdf1FhbsonCFhvfI4UKpLsV0d5VF97DsuM0u2Wj78S-EWDVAvQHx3eQ_szGeaw7JyyIX-m3LVjHlk53ZY5zXxmWBne06Zt15UgYJpR7cFnHMgJ0288OAyG9L4NgLr_tCcEAnSqF5PyX5wXhG0veaTOSMGKouy0Jy1wS0y8yJYgP2aYDw7JihTQ0mK4v1vT5kTvwmZgJC1h3mQro8XYp1tehg4To1aVUkQKKmFMVj2k_CuQjA8Hwg3HpD19bQNufgTfASszHOcxF6G_L-vJf9Ebt9Ji3WFW7SkIMKNK4VJFU0FTrSvA
+
+{
+  "appUserId": "",
+  "clientToken": ""
+}
+
+
+###
+GET http://localhost:8080/api/v1/bd/test/provider-institution
+
+###
+POST http://localhost:8080/api/v1/admin/visit-hospital-synchronous
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJteWRhdGEgdXNlciB0b2tlbiIsImFwcFVzZXJJZCI6IjEiLCJ1dGlsaXphdGlvbklkIjoiODAwMDA1NjIiLCJ1c2VySWQiOiJBMDAwMDAxIiwiZXhwIjoxNzUxNzk1MTI1fQ.aJgtywN6aJzaAlmVRZvnX6jAxC4F1xCLyXhDRdf1FhbsonCFhvfI4UKpLsV0d5VF97DsuM0u2Wj78S-EWDVAvQHx3eQ_szGeaw7JyyIX-m3LVjHlk53ZY5zXxmWBne06Zt15UgYJpR7cFnHMgJ0288OAyG9L4NgLr_tCcEAnSqF5PyX5wXhG0veaTOSMGKouy0Jy1wS0y8yJYgP2aYDw7JihTQ0mK4v1vT5kTvwmZgJC1h3mQro8XYp1tehg4To1aVUkQKKmFMVj2k_CuQjA8Hwg3HpD19bQNufgTfASszHOcxF6G_L-vJf9Ebt9Ji3WFW7SkIMKNK4VJFU0FTrSvA
+
+{
+  "userId": "edd7dbef-19ae-3859-b187-e275f1f3d2ce"
+}
+
+<> 2025-05-22T142808.401.json
+
+
