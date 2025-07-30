@@ -1,0 +1,34 @@
+server:
+  http_listen_port: 3200 # Tempo UI 및 HTTP 서버 포트
+  grpc_listen_port: 4317 # OTLP gRPC 데이터 수신 포트 (Collector가 데이터를 보낼 포트)
+  http_listen_address: 0.0.0.0
+
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        grpc: # OTLP gRPC 프로토콜 수신
+        http: # OTLP HTTP 프로토콜 수신
+
+ingester:
+  max_block_duration: 5m
+  trace_idle_period: "30s"
+  flush_check_period: "1m"
+  max_block_bytes: 1000000 # 1MB
+  complete_block_timeout: "5m"
+
+storage:
+  trace:
+    backend: local
+    local:
+      path: /tmp/tempo/traces # 트레이스 데이터를 저장할 로컬 경로
+
+# query_frontend (조회 성능 향상을 위해 사용, 선택적)
+#query_frontend:
+#  search:
+#    concurrent_queries_per_tenant: 20
+
+# compaction (저장 효율성 향상을 위해 사용, 선택적)
+#compactor:
+#  compaction:
+#    compaction_window: 1h # 예를 들어 1시간마다 압축 실행

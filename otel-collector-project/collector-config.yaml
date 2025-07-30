@@ -1,0 +1,41 @@
+# Receivers: Collector가 트레이스 데이터를 수신하는 방식 정의
+receivers:
+  otlp:
+    protocols:
+      grpc: # Spring Boot 애플리케이션이 OTLP gRPC로 보낼 것임
+      http:
+
+# Processors: 수신된 데이터를 처리하는 단계 정의
+processors:
+  tail_sampling:
+    decision_wait: 5s # 트레이스 완료를 기다리는 최대 시간 (트레이스가 완전히 수신될 때까지 대기)
+    num_traces: 100000 # 동시에 처리할 수 있는 최대 트레이스 수
+    expected_new_traces_per_sec: 1000 # 초당 예상되는 새로운 트레이스 수
+    policies:
+      # 정책 1: 오류가 발생한 트레이스는 무조건 샘플링 (가장 높은 우선순위)
+      - name: always-sample-on-error
+        type: status_code
+        status_code: [ERROR, UNSET] # ERROR 또는 UNSET 상태 코드인 스팬이 있으면 샘플링
+        latency: 0s
+        parent_error: false
+
+      # 정책 2: 오류가 없는 트레이스는 확률적으로 샘플링 (낮은 우선순위)
+      - name: probabilistic-sample-10-percent
+        type: probabilistic
+        sampling_percentage: 10 # 10%만 샘플링
+
+# Exporters: 처리된 데이터를 외부 시스템으로 내보내는 방식 정의
+exporters:
+  # Grafana Tempo로 OTLP gRPC 프로토콜을 사용하여 내보내기
+  otlp:
+    endpoint: tempo:4317 # Docker Compose에서 Tempo 서비스 이름이 'tempo'이고 OTLP gRPC 포트가 4317이라고 가정
+    tls:
+      insecure: true # 개발 환경에서 TLS 비활성화 (운영 시에는 구성 필요)
+
+# Service: 위에서 정의한 컴포넌트들을 연결하여 파이프라인 구성
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [tail_sampling] # tail_sampling 프로세서 적용
+      exporters: [otlp] # OTLP 익스포터를 통해 Tempo로 전송

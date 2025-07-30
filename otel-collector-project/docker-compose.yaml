@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  # 1. Spring Boot 애플리케이션 (옵션: Dockerfile을 만들면 컨테이너화 가능)
+  # 실제 개발에서는 로컬에서 IDE로 실행하는 경우가 많음
+  # spring-app:
+  #   build: .
+  #   ports:
+  #     - "8080:8080"
+  #   environment:
+  #     - MANAGEMENT_OTLP_TRACING_ENDPOINT=http://otel-collector:4317 # 컨테이너 내부 통신
+  #   depends_on:
+  #     - otel-collector
+
+  # 2. OpenTelemetry Collector
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest # 최신 contrib 버전 사용
+    command: ["--config=/etc/collector-config.yaml"] # Collector 설정 파일 지정
+    volumes:
+      - ./collector-config.yaml:/etc/collector-config.yaml # 로컬 설정 파일을 컨테이너 내부로 마운트
+    ports:
+      - "4317:4317" # OTLP gRPC 포트 (Spring Boot 앱이 데이터를 보낼 포트)
+      - "4318:4318" # OTLP HTTP 포트
+    depends_on:
+      - tempo # Tempo가 먼저 시작되도록 종속성 설정
+
+  # 3. Grafana Tempo
+  tempo:
+    image: grafana/tempo:2.5.0 # 최신 Tempo 버전 사용
+    command: [ "-config.file=/etc/tempo-config.yaml" ] # Tempo 설정 파일 지정
+    volumes:
+      - ./tempo-config.yaml:/etc/tempo-config.yaml # 로컬 설정 파일을 컨테이너 내부로 마운트
+      - tempo-data:/tmp/tempo/traces # 트레이스 데이터를 저장할 볼륨
+    ports:
+      - "3200:3200" # Tempo UI 및 HTTP 포트
+      - "4317:4317" # OTLP gRPC 수신 포트 (Collector가 데이터를 보낼 포트)
+      - "55680:55680" # OpenCensus receiver (선택적)
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "localhost:3200/ready"]
+      interval: 5s
+      timeout: 1s
+      retries: 3
+
+  # 4. Grafana UI
+  grafana:
+    image: grafana/grafana:10.4.0 # 최신 Grafana 버전 사용
+    volumes:
+      - grafana-data:/var/lib/grafana # Grafana 대시보드 및 설정 저장 볼륨
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources # 데이터소스 자동 설정
+    ports:
+      - "3000:3000" # Grafana UI 접속 포트
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true # 익명 로그인 허용 (개발용)
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin # 익명 사용자에게 Admin 권한 부여 (개발용)
+      - GF_AUTH_DISABLE_SIGNOUT_MENU=true
+    depends_on:
+      - tempo # Tempo가 먼저 시작되도록 종속성 설정
+
+volumes:
+  tempo-data: # Tempo 데이터 저장 볼륨
+  grafana-data: # Grafana 데이터 저장 볼륨
