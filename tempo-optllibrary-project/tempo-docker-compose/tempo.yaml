@@ -42,3 +42,14 @@ storage:
 #  사용자당 최대 추적 갯수
 #overrides:
 #  max_traces_per_user: 100000
+
+
+# query_frontend (조회 성능 향상을 위해 사용, 선택적)
+#query_frontend:
+#  search:
+#    concurrent_queries_per_tenant: 20
+
+# compaction (저장 효율성 향상을 위해 사용, 선택적)
+#compactor:
+#  compaction:
+#    compaction_window: 1h # 예를 들어 1시간마다 압축 실행

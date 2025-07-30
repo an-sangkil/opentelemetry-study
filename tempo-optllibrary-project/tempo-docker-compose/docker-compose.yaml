@@ -4,8 +4,8 @@ services:
   tempo:
     image: grafana/tempo:latest
     ports:
-      - "3200:3200"
-      - "4317:4317"
+      - "3200:3200"  # Tempo UI 및 HTTP 포트
+      - "4317:4317"  # OTLP gRPC 수신 포트 (Collector가 데이터를 보낼 포트)
       - "4318:4318"
     volumes:
       - ./tempo-data:/var/lib/tempo
@@ -13,6 +13,11 @@ services:
     configs:
       - source: tempo-config
         target: /etc/tempo.yaml
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "localhost:3200/ready"]
+      interval: 5s
+      timeout: 1s
+      retries: 3
     networks:
       - monitoring-network
 
@@ -22,6 +27,11 @@ services:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      # Grafana 설정 익명 사용시 해제 -시작-
+      #- GF_AUTH_ANONYMOUS_ENABLED=true # 익명 로그인 허용 (개발용)
+      #- GF_AUTH_ANONYMOUS_ORG_ROLE=Admin # 익명 사용자에게 Admin 권한 부여 (개발용)
+      #- GF_AUTH_DISABLE_SIGNOUT_MENU=true
+      # Grafana 설정 익명 사용시 해제 -끝-
     volumes:
       - ./grafana-data:/var/lib/grafana
     networks:
