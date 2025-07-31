@@ -1,4 +1,5 @@
 rootProject.name = 'otel-collector-project'
 include 'campaign-service'
-include 'collector-api-gateway'
+include 'serving-service'
+include 'api-gateway'
 
