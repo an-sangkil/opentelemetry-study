@@ -1,43 +1,45 @@
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '3.5.4'
-	id 'io.spring.dependency-management' version '1.1.7'
+    id 'java'
+    id 'org.springframework.boot' version '3.5.4'
+    id 'io.spring.dependency-management' version '1.1.7'
 }
 
-group = 'org.example'
-version = '0.0.1-SNAPSHOT'
 
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(21)
-	}
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
 }
 
 allprojects {
 
-	apply { plugin('java')}
-	apply { plugin('org.springframework.boot')}
-	apply { plugin('io.spring.dependency-management')}
-	repositories {
-		mavenCentral()
-	}
 
-	ext {
-		set('springCloudVersion', "2025.0.0")
-	}
+    apply { plugin('java') }
+    apply { plugin('org.springframework.boot') }
+    apply { plugin('io.spring.dependency-management') }
+    repositories {
+        mavenCentral()
+    }
+
+    ext {
+        set('springCloudVersion', "2025.0.0")
+    }
+
+
+    group = 'org.example'
+    version = '0.0.1-SNAPSHOT'
 
 
 
+    dependencyManagement {
+        imports {
+            mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+        }
+    }
 
-	dependencyManagement {
-		imports {
-			mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
-		}
-	}
-
-	dependencies {
-		implementation 'org.springframework.boot:spring-boot-starter-actuator'
-	}
+    dependencies {
+        implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    }
 }
 
 bootJar { enabled = false }
