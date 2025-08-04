@@ -3,3 +3,5 @@ include 'campaign-service'
 include 'serving-service'
 include 'api-gateway'
 
+
+include 'user-service'
