@@ -15,14 +15,14 @@ processors:
       # 정책 1: 오류가 발생한 트레이스는 무조건 샘플링 (가장 높은 우선순위)
       - name: always-sample-on-error
         type: status_code
-        status_code: [ERROR, UNSET] # ERROR 또는 UNSET 상태 코드인 스팬이 있으면 샘플링
-        latency: 0s
-        parent_error: false
+        status_code:
+          status_codes: [ERROR, UNSET] # ERROR 또는 UNSET 상태 코드인 스팬이 있으면 샘플링
 
       # 정책 2: 오류가 없는 트레이스는 확률적으로 샘플링 (낮은 우선순위)
       - name: probabilistic-sample-10-percent
         type: probabilistic
-        sampling_percentage: 10 # 10%만 샘플링
+        probabilistic:
+          sampling_percentage: 10 # 10%만 샘플링
 
 # Exporters: 처리된 데이터를 외부 시스템으로 내보내는 방식 정의
 exporters:
