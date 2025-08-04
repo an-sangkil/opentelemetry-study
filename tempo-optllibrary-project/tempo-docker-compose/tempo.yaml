@@ -1,6 +1,6 @@
 server:
   http_listen_port: 3200  # Tempo UI 및 HTTP 서버 포트 (Tempo의 웹 UI 등)
-  #grpc_listen_port: 4317  # gRPC 서버 포트, 주로 OTLP gRPC 데이터 수신
+  grpc_listen_port: 9095  # gRPC 서버 포트, 주로 OTLP gRPC 데이터 수신
   http_listen_address: 0.0.0.0
 
 # 권한 처리
