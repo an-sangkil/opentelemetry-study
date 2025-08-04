@@ -6,3 +6,5 @@ tempo-optllibrary-project/tempo-docker-compose/grafana-data/
 tempo-zipkinlibrary-project/tempo-zipkinlib-document/grafana-data/
 
 tempo-zipkinlibrary-project/tempo-zipkinlib-document/tempo-data/
+otel-collector-project/tempo-data
+otel-collector-project/grafana-data
