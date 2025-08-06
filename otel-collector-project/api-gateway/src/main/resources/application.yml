@@ -4,29 +4,36 @@ spring:
     name: collector-api-gateway
   cloud:
     gateway:
-      default-filters:
-        - AddRequestHeader=X-Request-Foo, Bar
-        - AddResponseHeader=X-Response-Foo, Bar
+      server:
+        webflux:
+          default-filters:
+            - AddRequestHeader=X-Request-Foo, Bar
+            - AddResponseHeader=X-Response-Foo, Bar
+          routes:
+            - id: campaign-service-route
+              uri: lb://campaign-service:8080
+              predicates:
+                - Path=/api/campaign/**
+              filters:
+                - CampaignAuthFilter
+                - CampaignLoggingFilter
+            - id: serving-service-route
+              uri: lb://serving-service
+              predicates:
+                - Path=/api/serving/**
+              filters:
+                - RewritePath=/api/serving/(?<segment>.*), /\${segment}
+            - id: user-service-route
+              uri: lb://user-service
+              predicates:
+                - Path=/api/user/**
+              filters:
+                - RewritePath=/api/user/(?<segment>.*), /\${segment}
+#eureka:
+#  client:
+#    serviceUrl:
+#      defaultZone: http://localhost:8761/eureka/
 
-      routes:
-        - id: campaign-service-route
-          uri: lb://campaign-service:8080
-          predicates:
-            - Path=/api/campaign/**
-          filters:
-            - RewritePath=/api/campaign/(?<segment>.*), /\${segment}
-        - id: serving-service-route
-          uri: lb://serving-service
-          predicates:
-            - Path=/api/serving/**
-          filters:
-            - RewritePath=/api/serving/(?<segment>.*), /\${segment}
-        - id: user-service-route
-          uri: lb://user-service
-          predicates:
-            - Path=/api/user/**
-          filters:
-            - RewritePath=/api/user/(?<segment>.*), /\${segment}
 server:
   port: 80
 logging:
