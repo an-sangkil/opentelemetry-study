@@ -1,0 +1,39 @@
+
+spring:
+  application:
+    name: collector-api-gateway
+  cloud:
+    gateway:
+      default-filters:
+        - AddRequestHeader=X-Request-Foo, Bar
+        - AddResponseHeader=X-Response-Foo, Bar
+
+      routes:
+        - id: campaign-service-route
+          uri: lb://campaign-service:8080
+          predicates:
+            - Path=/api/campaign/**
+          filters:
+            - RewritePath=/api/campaign/(?<segment>.*), /\${segment}
+        - id: serving-service-route
+          uri: lb://serving-service
+          predicates:
+            - Path=/api/serving/**
+          filters:
+            - RewritePath=/api/serving/(?<segment>.*), /\${segment}
+        - id: user-service-route
+          uri: lb://user-service
+          predicates:
+            - Path=/api/user/**
+          filters:
+            - RewritePath=/api/user/(?<segment>.*), /\${segment}
+server:
+  port: 80
+logging:
+  level:
+    root: info
+    # Spring Cloud Gateway의 라우팅 및 필터 관련 로그를 DEBUG 레벨로 설정
+    org.springframework.cloud.gateway: DEBUG
+    # HTTP 요청/응답 정보 관련 로그를 DEBUG 레벨로 설정
+    org.springframework.http.server.reactive: DEBUG
+

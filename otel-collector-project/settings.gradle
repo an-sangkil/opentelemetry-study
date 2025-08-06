@@ -5,3 +5,4 @@ include 'api-gateway'
 
 
 include 'user-service'
+include 'eureka-server'
