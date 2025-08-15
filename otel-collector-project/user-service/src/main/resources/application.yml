@@ -1,8 +1,24 @@
+server:
+  port: 8083
+    
 spring:
   application:
     name: user-service
 
 eureka:
+  instance:
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
   client:
     serviceUrl:
       defaultZone: http://localhost:8761/eureka/
+
+logging:
+  level:
+    root: info
+    com.example: debug  # com.example 패키지에 대해 debug 로그 활성화
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %clr(%-5level) %clr([${spring.application.name:-}]){yellow} %clr([%15.15t]){faint} %clr([%X{traceId:-},%X{spanId:-}]){magenta} %clr(%-40.40logger{39}){cyan} : %msg%n"
+    # 파일이나 WARN, ERROR 을 설정하는 프로퍼티 이다. file.path 또는 file.name을 설정하지 않으면 어디로 출력해야 할지 모름으로 -> console로 보냄으로 콘솔에 두가지 패턴의 로그기 찍힌다.
+    #level: '%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - [%X{traceId}/%X{spanId}] %msg%n'
+

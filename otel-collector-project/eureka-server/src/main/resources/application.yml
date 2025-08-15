@@ -2,6 +2,11 @@ server:
   port: 8761
 
 eureka:
+  server:
+    # Disable self-preservation to prevent instances from being kept alive incorrectly during development.
+    enable-self-preservation: false
+    # Run the eviction task more frequently to clean up dead instances faster.
+    eviction-interval-timer-in-ms: 5000
   client:
     register-with-eureka: false
     fetch-registry: false
