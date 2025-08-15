@@ -39,7 +39,7 @@ public class ServingController {
 
         // Call user-service REST API to fetch user information
         
-        String userServiceUrl = "http://user-service/user/v1/info/" + campaignId;
+        String userServiceUrl = "http://user-service/user/v1/info?userId=123456";
         String userInfo;
         try {
             userInfo = restTemplate.getForObject(userServiceUrl, String.class);
