@@ -13,12 +13,11 @@
     <!-- OpenTelemetry OTLP appender -->
     <appender name="OTLP" class="io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender">
         <endpoint>http://localhost:4317</endpoint>
-        <includeLoggerName>true</includeLoggerName>
-        <includeLoggerContext>true</includeLoggerContext>
-        <includeCallerData>false</includeCallerData>
-        <includeMdc>true</includeMdc>
-        <includeArguments>true</includeArguments>
-        <includeStackTrace>true</includeStackTrace>
+        <captureExperimentalAttributes>true</captureExperimentalAttributes>
+        <captureKeyValuePairAttributes>true</captureKeyValuePairAttributes>
+        <captureLoggerContext>true</captureLoggerContext>
+        <captureMarkerAttribute>true</captureMarkerAttribute>
+        <captureMdcAttributes>true</captureMdcAttributes>
     </appender>
 
     <!-- 루트 로거 설정 -->
