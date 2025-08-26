@@ -61,9 +61,23 @@ logging:
 ```xml
 <appender name="OTLP" class="io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender">
     <endpoint>http://localhost:4317</endpoint>
-    <includeMdc>true</includeMdc>
+    <captureExperimentalAttributes>true</captureExperimentalAttributes>
+    <captureKeyValuePairAttributes>true</captureKeyValuePairAttributes>
+    <captureLoggerContext>true</captureLoggerContext>
+    <captureMarkerAttribute>true</captureMarkerAttribute>
+    <captureMdcAttributes>true</captureMdcAttributes>
 </appender>
 ```
+
+#### ⚠️ 중요: gRPC 엔드포인트 설정
+OpenTelemetry에서 gRPC 연결시 스키마 사용법:
+- ✅ `http://localhost:4317` - insecure gRPC 연결 (올바름)
+- ✅ `https://localhost:4317` - secure gRPC 연결 (TLS)
+- ❌ `grpc://localhost:4317` - OpenTelemetry 표준에서 사용하지 않음
+
+**포트별 프로토콜**:
+- **4317**: gRPC (하지만 `http://` 스키마 사용)
+- **4318**: HTTP REST API
 
 ## 아키텍처 선택 배경
 
