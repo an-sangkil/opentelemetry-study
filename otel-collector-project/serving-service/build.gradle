@@ -5,8 +5,9 @@ dependencies {
     implementation 'io.micrometer:micrometer-tracing-bridge-otel' // Tracing-Log 연동
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
-    runtimeOnly 'io.micrometer:micrometer-registry-otlp' // 로그 전송
+    runtimeOnly 'io.micrometer:micrometer-registry-otlp'           // 매트릭 전송 전송
     runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
+    implementation 'io.opentelemetry:opentelemetry-logback-appender:1.32.0' // 로그 전송
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

@@ -32,7 +32,6 @@ exporters:
     tls:
       insecure: true # 개발 환경에서 TLS 비활성화 (운영 시에는 구성 필요)
 
-# Service: 위에서 정의한 컴포넌트들을 연결하여 파이프라인 구성
 service:
   pipelines:
     traces:
