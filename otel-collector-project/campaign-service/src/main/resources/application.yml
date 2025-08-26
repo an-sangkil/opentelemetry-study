@@ -5,8 +5,33 @@ spring:
   application:
     name: campaign-service
 
-
 eureka:
   client:
     serviceUrl:
       defaultZone: http://localhost:8761/eureka/
+
+
+# Micrometer Tracing & OTLP 설정
+management:
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318  # HTTP endpoint
+    metrics:
+      export:
+        enabled: true
+        url: http://localhost:4318/v1/metrics
+        step: 10s
+  tracing:
+    sampling:
+      probability: 1.0
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+
+logging:
+  level:
+    root: info
+    com.example: debug
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %clr(%-5level) %clr([${spring.application.name:-}]){yellow} %clr([%15.15t]){faint} %clr([%X{traceId:-},%X{spanId:-}]){magenta} %clr(%-40.40logger{39}){cyan} : %msg%n"
