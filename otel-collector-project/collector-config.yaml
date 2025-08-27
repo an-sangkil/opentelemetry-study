@@ -1,70 +1,117 @@
-# Receivers: Collector가 트레이스 데이터를 수신하는 방식 정의
+# =============================================================================
+# OpenTelemetry Collector Configuration
+# =============================================================================
+# 이 파일은 OpenTelemetry Collector의 동작을 정의합니다.
+# 
+# 포트 설정 요약:
+# - 4317 (gRPC): Spring Boot 애플리케이션이 트레이스를 보내는 표준 OTLP 포트
+# - 4318 (HTTP): Spring Boot 애플리케이션이 트레이스를 보내는 표준 OTLP 포트
+# - 9095 (gRPC): Collector가 Tempo로 트레이스를 전송하는 포트 (개발환경 전용)
+#
+# 주의: 실제 운영환경에서는 Tempo도 4317/4318 표준 포트를 사용합니다.
+#       개발환경에서만 포트 충돌을 피하기 위해 다른 포트를 사용합니다.
+# =============================================================================
+
+# Receivers: Collector가 외부에서 트레이스/메트릭/로그 데이터를 수신하는 방식 정의
 receivers:
   otlp:
     protocols:
       grpc:
+        # OTLP gRPC 수신 엔드포인트 (IANA 표준 포트 4317)
+        # Spring Boot 애플리케이션에서 이 포트로 트레이스를 전송
+        # 0.0.0.0: 모든 네트워크 인터페이스에서 수신 (Docker 환경 필수)
         endpoint: 0.0.0.0:4317
       http:
+        # OTLP HTTP 수신 엔드포인트 (IANA 표준 포트 4318)
+        # gRPC 대신 HTTP를 사용하는 애플리케이션을 위한 포트
+        # 0.0.0.0: 모든 네트워크 인터페이스에서 수신 (Docker 환경 필수)
         endpoint: 0.0.0.0:4318
 
-# Processors: 수신된 데이터를 처리하는 단계 정의
+# Processors: 수신된 데이터를 가공/변환하는 단계 정의
+# 여러 프로세서를 체인으로 연결하여 데이터를 순차적으로 처리
 processors:
-  # 배치 처리를 통한 성능 최적화
+  # Batch Processor: 개별 요청을 배치로 묶어서 성능 최적화
+  # 네트워크 호출 횟수를 줄여 전송 효율성을 높임
   batch:
-    timeout: 1s
-    send_batch_size: 1024
-    send_batch_max_size: 2048
+    timeout: 1s              # 배치를 기다리는 최대 시간 (1초 후 강제 전송)
+    send_batch_size: 1024    # 배치 크기 (1024개 항목이 모이면 전송)
+    send_batch_max_size: 2048 # 최대 배치 크기 (메모리 사용량 제한)
 
+  # Tail Sampling Processor: 트레이스 완료 후 샘플링 결정
+  # Head sampling과 달리 전체 트레이스를 보고 샘플링 여부를 결정
+  # 장점: 오류 발생한 트레이스는 100% 보존, 정상 트레이스는 선별적 저장
   tail_sampling:
-    decision_wait: 5s # 트레이스 완료를 기다리는 최대 시간 (트레이스가 완전히 수신될 때까지 대기)
-    num_traces: 100000 # 동시에 처리할 수 있는 최대 트레이스 수
-    expected_new_traces_per_sec: 1000 # 초당 예상되는 새로운 트레이스 수
+    decision_wait: 5s # 트레이스 완료를 기다리는 최대 시간
+                     # 분산 트레이스의 모든 스팬이 도착할 때까지 대기
+    num_traces: 100000 # 메모리에서 동시 처리할 수 있는 최대 트레이스 수
+    expected_new_traces_per_sec: 1000 # 초당 예상 신규 트레이스 수 (메모리 할당 최적화)
+    
     policies:
-      # 정책 1: 오류가 발생한 트레이스는 무조건 샘플링 (가장 높은 우선순위)
+      # 정책 1: 오류 트레이스 100% 보존 (최고 우선순위)
+      # 장애 분석을 위해 오류가 발생한 모든 트레이스를 저장
       - name: always-sample-on-error
         type: status_code
         status_code:
-          status_codes: [ERROR, UNSET] # ERROR 또는 UNSET 상태 코드인 스팬이 있으면 샘플링
+          status_codes: [ERROR, UNSET] # ERROR(명시적 오류) 또는 UNSET(미설정/오류 가능성)
 
-      # 정책 2: 오류가 없는 트레이스는 확률적으로 샘플링 (낮은 우선순위)
+      # 정책 2: 정상 트레이스 10% 샘플링 (낮은 우선순위)
+      # 대용량 트래픽에서 스토리지 비용 절약과 성능 확보
       - name: probabilistic-sample-10-percent
         type: probabilistic
         probabilistic:
-          sampling_percentage: 10 # 10%만 샘플링
+          sampling_percentage: 10 # 정상 트레이스 중 10%만 저장
 
-# Exporters: 처리된 데이터를 외부 시스템으로 내보내는 방식 정의
+# Exporters: 처리된 데이터를 외부 시스템(백엔드)으로 내보내는 방식 정의
+# 하나의 데이터를 여러 백엔드 시스템에 동시 전송 가능
 exporters:
-  # Grafana Tempo로 OTLP gRPC 프로토콜을 사용하여 내보내기
+  # Grafana Tempo Exporter: 트레이스 데이터를 Tempo로 전송
+  # OTLP gRPC 프로토콜 사용 (성능 최적화)
   otlp/tempo:
-    endpoint: tempo:9095
+    endpoint: tempo:9095     # Tempo 컨테이너의 OTLP gRPC 수신 포트
+                            # 개발환경: 9095 (포트 충돌 방지)
+                            # 운영환경: 4317 (표준 포트 사용 권장)
     tls:
-      insecure: true
+      insecure: true        # TLS 비활성화 (내부 Docker 네트워크용)
+                           # 운영환경에서는 TLS 활성화 권장
 
-  # Grafana Loki로 OTLP HTTP 프로토콜을 사용하여 로그 전송
+  # Grafana Loki Exporter: 로그 데이터를 Loki로 전송
+  # 로그 중앙화 및 Grafana에서 통합 조회를 위함
   otlphttp:
-    endpoint: http://loki:3100/loki/api/v1/push
+    endpoint: http://loki:3100/loki/api/v1/push  # Loki의 로그 수신 API 엔드포인트
 
-  # 디버그 출력 (테스트용)
+  # Debug Exporter: 콘솔에 디버그 정보 출력 (개발/테스트 용도)
+  # 트러블슈팅 시 데이터 흐름 확인에 유용
   debug:
-    verbosity: basic
-  # 파일로 출력 (테스트용)
-  file:
-    path: /logs/otel-data.json
+    verbosity: basic        # 출력 상세도 (basic, normal, detailed)
 
+  # File Exporter: 로컬 파일로 데이터 저장 (개발/테스트 용도)
+  # 백엔드 시스템 연결 전에 데이터 검증 또는 백업 용도
+  file:
+    path: /logs/otel-data.json  # JSON 형태로 저장되는 파일 경로
+
+# Service: Collector의 전체적인 동작을 정의
+# Receivers → Processors → Exporters 파이프라인 구성
 service:
   pipelines:
+    # 트레이스 파이프라인: 분산 추적 데이터 처리
+    # 애플리케이션의 요청 흐름과 성능 정보를 수집/전송
     traces:
-      receivers: [otlp]
-      processors: [tail_sampling] # tail_sampling 프로세서 적용
-      exporters: [otlp/tempo] # OTLP gRPC 익스포터를 통해 Tempo로 전송
+      receivers: [otlp]           # OTLP 프로토콜로 트레이스 수신
+      processors: [tail_sampling] # 스마트 샘플링 적용 (오류 100%, 정상 10%)
+      exporters: [otlp/tempo]     # Tempo로 트레이스 전송
     
-    # 메트릭 파이프라인 추가
+    # 메트릭 파이프라인: 시계열 수치 데이터 처리
+    # CPU, 메모리, 응답시간 등의 정량적 지표 수집
     metrics:
-      receivers: [otlp]
-      exporters: [file] # 파일로 출력
+      receivers: [otlp]           # OTLP 프로토콜로 메트릭 수신
+      exporters: [file]           # 현재는 파일로만 저장 (추후 Prometheus 연결 가능)
     
-    # 로그 파이프라인 추가
+    # 로그 파이프라인: 애플리케이션 로그 데이터 처리
+    # 구조화된 로그 메시지 수집 및 중앙 집중화
     logs:
-      receivers: [otlp]
-      processors: [batch]
-      exporters: [otlphttp, file, debug] # Loki, 파일, 디버그 출력으로 로그 전송
+      receivers: [otlp]           # OTLP 프로토콜로 로그 수신
+      processors: [batch]         # 배치 처리로 전송 효율성 향상
+      exporters: [otlphttp, file, debug]  # 다중 출력:
+                                 # - otlphttp: Loki로 전송 (중앙 로그 저장소)
+                                 # - file: 로컬 파일 백업
+                                 # - debug: 콘솔 출력 (디버깅용)

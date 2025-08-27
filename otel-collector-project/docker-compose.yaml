@@ -1,3 +1,17 @@
+# =============================================================================
+# OpenTelemetry 개발 환경 Docker Compose 설정
+# =============================================================================
+# 이 파일은 개발 환경에서 OpenTelemetry 스택을 구성합니다.
+# 
+# 포트 매핑 요약:
+# - Collector: 4317(gRPC), 4318(HTTP) - 애플리케이션 연결점 (표준 포트)
+# - Tempo: 3200(UI), 9095(OTLP gRPC), 3201(OTLP HTTP) - 충돌 방지용 비표준 포트
+# - Loki: 3100(HTTP) - 로그 수집
+# - Grafana: 3000(UI) - 시각화 대시보드
+#
+# 실제 운영환경에서는 각 서비스가 별도 서버에 배포되므로 모두 표준 포트 사용 가능
+# =============================================================================
+
 version: '3.8'
 
 services:
@@ -12,7 +26,7 @@ services:
   #   depends_on:
   #     - otel-collector
 
-  # 2. OpenTelemetry Collector
+  # 2. OpenTelemetry Collector - 관측 데이터 수집 및 전송 허브
   otel-collector:
     image: otel/opentelemetry-collector-contrib:latest # 최신 contrib 버전 사용
     command: ["--config=/etc/collector-config.yaml"] # Collector 설정 파일 지정
@@ -20,12 +34,13 @@ services:
       - ./collector-config.yaml:/etc/collector-config.yaml # 로컬 설정 파일을 컨테이너 내부로 마운트
       - ./collector-logs:/logs # 로그 파일 저장을 위한 볼륨 마운트
     ports:
-      - "4317:4317" # OTLP gRPC 포트 (Spring Boot 앱이 데이터를 보낼 포트)
-      - "4318:4318" # OTLP HTTP 포트
+      # OTLP 표준 포트 - Spring Boot 애플리케이션의 연결 엔드포인트
+      - "4317:4317" # OTLP gRPC (IANA 표준 포트) - 고성능 바이너리 프로토콜
+      - "4318:4318" # OTLP HTTP (IANA 표준 포트) - REST API 호환 프로토콜
     depends_on:
       - tempo # Tempo가 먼저 시작되도록 종속성 설정
 
-  # 3. Grafana Tempo
+  # 3. Grafana Tempo - 분산 트레이스 저장 및 조회 시스템
   tempo:
     image: grafana/tempo:latest # 최신 Tempo 버전 사용
     command: [ "-config.file=/etc/tempo-config.yaml" ] # Tempo 설정 파일 지정
@@ -33,42 +48,47 @@ services:
       - ./tempo-config.yaml:/etc/tempo-config.yaml # 로컬 설정 파일을 컨테이너 내부로 마운트
       - tempo-data:/tmp/tempo/traces # 트레이스 데이터를 저장할 볼륨
     ports:
-      - "3200:3200" # Tempo UI 및 HTTP 포트
-      - "9095:9095" # OTLP gRPC 수신 포트 (Collector가 데이터를 보낼 포트) , otel-collector 에서 사용함으로 주석처리
-      - "55680:55680" # OpenCensus receiver (선택적)
+      # Tempo 서비스 포트 (개발환경 전용 - 충돌 방지용)
+      - "3200:3200" # Tempo UI 및 Query API - Grafana에서 트레이스 조회
+      - "9095:9095" # OTLP gRPC 수신 - Collector에서 트레이스 데이터 수신
+                   # 주의: 운영환경에서는 4317 표준 포트 사용 권장
+      - "3201:3201" # OTLP HTTP 수신 - HTTP 프로토콜 트레이스 데이터 수신  
+                   # 주의: 운영환경에서는 4318 표준 포트 사용 권장
     healthcheck:
       test: ["CMD", "wget", "-qO-", "localhost:3200/ready"]
       interval: 5s
       timeout: 1s
       retries: 3
 
-  # 4. Grafana Loki (로그 수집 및 저장)
+  # 4. Grafana Loki - 로그 수집 및 저장 시스템
   loki:
     image: grafana/loki:latest
     command: -config.file=/etc/loki/local-config.yaml
     ports:
-      - "3100:3100" # Loki HTTP 포트
+      - "3100:3100" # Loki HTTP API - Collector에서 로그 데이터 수신 및 Grafana 조회
     volumes:
-      - loki-data:/loki
+      - loki-data:/loki # 로그 데이터 저장 볼륨
 
-  # 5. Grafana UI
+  # 5. Grafana UI - 통합 관측 가능성 대시보드
   grafana:
     image: grafana/grafana:10.4.0 # 최신 Grafana 버전 사용
     volumes:
       - grafana-data:/var/lib/grafana # Grafana 대시보드 및 설정 저장 볼륨
       - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources # 데이터소스 자동 설정
     ports:
-      - "3000:3000" # Grafana UI 접속 포트
+      - "3000:3000" # Grafana 웹 UI - 트레이스, 메트릭, 로그 시각화 대시보드
     environment:
+      # 개발 편의성을 위한 익명 접근 허용 설정 (운영환경에서는 비활성화 권장)
       - GF_AUTH_ANONYMOUS_ENABLED=true # 익명 로그인 허용 (개발용)
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin # 익명 사용자에게 Admin 권한 부여 (개발용)
-      - GF_AUTH_DISABLE_SIGNOUT_MENU=true
+      - GF_AUTH_DISABLE_SIGNOUT_MENU=true # 로그아웃 메뉴 숨김
     depends_on:
-      - tempo # Tempo가 먼저 시작되도록 종속성 설정
-      - loki # Loki가 먼저 시작되도록 종속성 설정
+      - tempo # Tempo가 먼저 시작되도록 종속성 설정 (트레이스 데이터소스)
+      - loki # Loki가 먼저 시작되도록 종속성 설정 (로그 데이터소스)
 
+# Docker 볼륨 정의 - 컨테이너 재시작 시에도 데이터 영속성 보장
 volumes:
-  tempo-data: # Tempo 데이터 저장 볼륨
-  grafana-data: # Grafana 데이터 저장 볼륨
-  loki-data: # Loki 데이터 저장 볼륨
-  collector-logs: # Collector 로그 파일 저장 볼륨
+  tempo-data: # Tempo 트레이스 데이터 저장 볼륨 (/tmp/tempo/traces)
+  grafana-data: # Grafana 대시보드, 설정, 플러그인 저장 볼륨
+  loki-data: # Loki 로그 데이터 저장 볼륨 (/loki)
+  collector-logs: # Collector 디버그 로그 파일 저장 볼륨 (/logs)

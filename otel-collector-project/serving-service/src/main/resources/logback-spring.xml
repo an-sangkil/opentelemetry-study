@@ -12,7 +12,8 @@
 
     <!-- OpenTelemetry OTLP appender -->
     <appender name="OTLP" class="io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender">
-        <endpoint>http://localhost:4317</endpoint>
+        <endpoint>http://localhost:4318</endpoint><!-- http -->
+        <!-- <endpoint>localhost:4317</endpoint> gRpc-->
         <captureExperimentalAttributes>true</captureExperimentalAttributes>
         <captureKeyValuePairAttributes>true</captureKeyValuePairAttributes>
         <captureLoggerContext>true</captureLoggerContext>
