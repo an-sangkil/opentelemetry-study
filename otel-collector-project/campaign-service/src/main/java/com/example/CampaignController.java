@@ -8,6 +8,7 @@ import io.opentelemetry.context.Scope;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -39,7 +40,7 @@ public class CampaignController {
     /**
      * 수동 트레이싱 예제 - 직접 스팬 생성/관리
      */
-    @GetMapping("/api/campaign/create")
+    @PostMapping("/api/campaign/create")
     public String campaignCreate() {
         // 수동 스팬 생성
         Span span = tracer.spanBuilder("campaign_create")

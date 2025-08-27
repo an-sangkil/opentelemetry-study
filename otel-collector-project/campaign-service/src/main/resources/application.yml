@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8081
 
 spring:
   application:
@@ -15,7 +15,7 @@ eureka:
 management:
   otlp:
     tracing:
-      endpoint: http://localhost:4318  # HTTP endpoint
+      endpoint: http://localhost:4318/v1/traces  # HTTP endpoint with correct path
     metrics:
       export:
         enabled: true

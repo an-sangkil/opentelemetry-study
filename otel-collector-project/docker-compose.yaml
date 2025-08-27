@@ -18,6 +18,7 @@ services:
     command: ["--config=/etc/collector-config.yaml"] # Collector 설정 파일 지정
     volumes:
       - ./collector-config.yaml:/etc/collector-config.yaml # 로컬 설정 파일을 컨테이너 내부로 마운트
+      - ./collector-logs:/logs # 로그 파일 저장을 위한 볼륨 마운트
     ports:
       - "4317:4317" # OTLP gRPC 포트 (Spring Boot 앱이 데이터를 보낼 포트)
       - "4318:4318" # OTLP HTTP 포트
@@ -41,7 +42,16 @@ services:
       timeout: 1s
       retries: 3
 
-  # 4. Grafana UI
+  # 4. Grafana Loki (로그 수집 및 저장)
+  loki:
+    image: grafana/loki:latest
+    command: -config.file=/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100" # Loki HTTP 포트
+    volumes:
+      - loki-data:/loki
+
+  # 5. Grafana UI
   grafana:
     image: grafana/grafana:10.4.0 # 최신 Grafana 버전 사용
     volumes:
@@ -55,7 +65,10 @@ services:
       - GF_AUTH_DISABLE_SIGNOUT_MENU=true
     depends_on:
       - tempo # Tempo가 먼저 시작되도록 종속성 설정
+      - loki # Loki가 먼저 시작되도록 종속성 설정
 
 volumes:
   tempo-data: # Tempo 데이터 저장 볼륨
   grafana-data: # Grafana 데이터 저장 볼륨
+  loki-data: # Loki 데이터 저장 볼륨
+  collector-logs: # Collector 로그 파일 저장 볼륨

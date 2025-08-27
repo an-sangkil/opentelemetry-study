@@ -2,8 +2,10 @@
 receivers:
   otlp:
     protocols:
-      grpc: # Spring Boot 애플리케이션이 OTLP gRPC로 보낼 것임
+      grpc:
+        endpoint: 0.0.0.0:4317
       http:
+        endpoint: 0.0.0.0:4318
 
 # Processors: 수신된 데이터를 처리하는 단계 정의
 processors:
@@ -32,13 +34,16 @@ exporters:
     tls:
       insecure: true # 개발 환경에서 TLS 비활성화 (운영 시에는 구성 필요)
 
-  # 로그를 Loki로 전송
-  loki:
-    endpoint: http://loki:3100/loki/api/v1/push
+#  # 로그를 Loki로 전송
+#  loki:
+#    endpoint: http://loki:3100/loki/api/v1/push
 
+  # 디버그 출력 (테스트용)
+  debug:
+    verbosity: basic
   # 파일로 출력 (테스트용)
   file:
-    path: ./logs/otel-data.json
+    path: /logs/otel-data.json
 
 service:
   pipelines:
@@ -47,12 +52,7 @@ service:
       processors: [tail_sampling] # tail_sampling 프로세서 적용
       exporters: [otlp] # OTLP 익스포터를 통해 Tempo로 전송
     
-    # 로그 파이프라인 추가
-    logs:
-      receivers: [otlp]
-      exporters: [loki, file] # Loki와 파일 모두로 전송
-    
     # 메트릭 파이프라인 추가
     metrics:
       receivers: [otlp]
-      exporters: [file] # 일단 파일로 출력
+      exporters: [file] # 파일로 출력
