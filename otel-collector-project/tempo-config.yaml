@@ -5,11 +5,11 @@
 #
 # 포트 설정 요약:
 # - 3200: Tempo UI 및 Query API (Grafana에서 접근)
-# - 9096: Tempo 내부 gRPC 서비스 (컴포넌트 간 통신)
-# - 9095: OTLP gRPC 수신 (Collector에서 트레이스 데이터 수신)
-# - 3201: OTLP HTTP 수신 (Collector에서 트레이스 데이터 수신)
+# - 9095: Tempo 내부 gRPC 서비스 (컴포넌트 간 통신)
+# - 4417: OTLP gRPC 수신 (Collector에서 트레이스 데이터 수신)
+# - 4418: OTLP HTTP 수신 (Collector에서 트레이스 데이터 수신)
 #
-# 주의: 개발환경에서는 Collector와 포트 충돌을 피하기 위해 9095/3201 사용
+# 주의: 개발환경에서는 Collector와 포트 구분을 위해 4417/4418 사용
 #       실제 운영환경에서는 4317/4318 표준 포트 사용 권장
 # =============================================================================
 
@@ -18,7 +18,7 @@
 server:
   http_listen_port: 3200    # Tempo UI 및 HTTP Query API 포트
                            # Grafana에서 이 포트로 트레이스 조회 요청
-  grpc_listen_port: 9096   # Tempo 내부 gRPC 서비스 포트
+  grpc_listen_port: 9095   # Tempo 내부 gRPC 서비스 포트
                            # Querier, Query-Frontend 등 내부 컴포넌트 간 통신
   http_listen_address: 0.0.0.0  # 모든 네트워크 인터페이스에서 수신
 
@@ -33,12 +33,12 @@ distributor:
         grpc:
           # OTLP gRPC 수신 엔드포인트
           # OpenTelemetry Collector가 이 포트로 트레이스 전송
-          endpoint: 0.0.0.0:9095  # 개발환경: 9095 (Collector 4317과 충돌 방지)
+          endpoint: 0.0.0.0:4417  # 개발환경: 4417 (Collector 4317과 구분)
                                  # 운영환경: 0.0.0.0:4317 (표준 포트) 권장
         http:
           # OTLP HTTP 수신 엔드포인트  
           # gRPC를 사용할 수 없는 환경에서 HTTP로 트레이스 전송
-          endpoint: 0.0.0.0:3201  # 개발환경: 3201 (Collector 4318과 충돌 방지)
+          endpoint: 0.0.0.0:4418  # 개발환경: 4418 (Collector 4318과 구분)
                                  # 운영환경: 0.0.0.0:4318 (표준 포트) 권장
 
 # Ingester: 수신된 트레이스 데이터를 메모리에서 처리하고 저장소에 기록
@@ -61,8 +61,9 @@ storage:
     local:
       path: /tmp/tempo/traces # 트레이스 블록이 저장될 로컬 디렉토리
                              # Docker 볼륨으로 마운트되어 데이터 영속성 확보
-    wal:                      # Write-Ahead Log (WAL) 설정
-      path: /tmp/tempo/wal    # WAL 파일 저장 경로 (데이터 무결성 보장)
+    # wal:                      # Write-Ahead Log (WAL) 설정 - 권한 문제로 주석처리
+    #   path: /tmp/tempo/wal    # WAL 파일 저장 경로 (데이터 무결성 보장)
+                               # 운영환경에서는 활성화 권장 (권한 설정 후)
 
 # Query Frontend: 조회 성능 최적화 (선택적)
 # 대용량 데이터셋에서 병렬 쿼리 처리를 통한 성능 향상

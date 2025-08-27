@@ -5,7 +5,7 @@
 # 
 # 포트 매핑 요약:
 # - Collector: 4317(gRPC), 4318(HTTP) - 애플리케이션 연결점 (표준 포트)
-# - Tempo: 3200(UI), 9095(OTLP gRPC), 3201(OTLP HTTP) - 충돌 방지용 비표준 포트
+# - Tempo: 3200(UI), 4417(OTLP gRPC), 4418(OTLP HTTP) - 포트 구분용 비표준 포트
 # - Loki: 3100(HTTP) - 로그 수집
 # - Grafana: 3000(UI) - 시각화 대시보드
 #
@@ -47,12 +47,13 @@ services:
     volumes:
       - ./tempo-config.yaml:/etc/tempo-config.yaml # 로컬 설정 파일을 컨테이너 내부로 마운트
       - tempo-data:/tmp/tempo/traces # 트레이스 데이터를 저장할 볼륨
+      - tempo-wal:/tmp/tempo/wal # WAL 데이터를 저장할 볼륨
     ports:
-      # Tempo 서비스 포트 (개발환경 전용 - 충돌 방지용)
+      # Tempo 서비스 포트 (개발환경 전용 - 포트 구분용)
       - "3200:3200" # Tempo UI 및 Query API - Grafana에서 트레이스 조회
-      - "9095:9095" # OTLP gRPC 수신 - Collector에서 트레이스 데이터 수신
+      - "4417:4417" # OTLP gRPC 수신 - Collector에서 트레이스 데이터 수신
                    # 주의: 운영환경에서는 4317 표준 포트 사용 권장
-      - "3201:3201" # OTLP HTTP 수신 - HTTP 프로토콜 트레이스 데이터 수신  
+      - "4418:4418" # OTLP HTTP 수신 - HTTP 프로토콜 트레이스 데이터 수신  
                    # 주의: 운영환경에서는 4318 표준 포트 사용 권장
     healthcheck:
       test: ["CMD", "wget", "-qO-", "localhost:3200/ready"]
@@ -89,6 +90,7 @@ services:
 # Docker 볼륨 정의 - 컨테이너 재시작 시에도 데이터 영속성 보장
 volumes:
   tempo-data: # Tempo 트레이스 데이터 저장 볼륨 (/tmp/tempo/traces)
+  tempo-wal: # Tempo WAL 데이터 저장 볼륨 (/tmp/tempo/wal)
   grafana-data: # Grafana 대시보드, 설정, 플러그인 저장 볼륨
   loki-data: # Loki 로그 데이터 저장 볼륨 (/loki)
   collector-logs: # Collector 디버그 로그 파일 저장 볼륨 (/logs)

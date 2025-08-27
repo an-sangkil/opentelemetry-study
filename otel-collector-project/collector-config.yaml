@@ -6,10 +6,10 @@
 # 포트 설정 요약:
 # - 4317 (gRPC): Spring Boot 애플리케이션이 트레이스를 보내는 표준 OTLP 포트
 # - 4318 (HTTP): Spring Boot 애플리케이션이 트레이스를 보내는 표준 OTLP 포트
-# - 9095 (gRPC): Collector가 Tempo로 트레이스를 전송하는 포트 (개발환경 전용)
+# - 4417 (gRPC): Collector가 Tempo로 트레이스를 전송하는 포트 (개발환경 전용)
 #
 # 주의: 실제 운영환경에서는 Tempo도 4317/4318 표준 포트를 사용합니다.
-#       개발환경에서만 포트 충돌을 피하기 위해 다른 포트를 사용합니다.
+#       개발환경에서만 포트 구분을 위해 4417/4418 포트를 사용합니다.
 # =============================================================================
 
 # Receivers: Collector가 외부에서 트레이스/메트릭/로그 데이터를 수신하는 방식 정의
@@ -67,8 +67,8 @@ exporters:
   # Grafana Tempo Exporter: 트레이스 데이터를 Tempo로 전송
   # OTLP gRPC 프로토콜 사용 (성능 최적화)
   otlp/tempo:
-    endpoint: tempo:9095     # Tempo 컨테이너의 OTLP gRPC 수신 포트
-                            # 개발환경: 9095 (포트 충돌 방지)
+    endpoint: tempo:4417     # Tempo 컨테이너의 OTLP gRPC 수신 포트
+                            # 개발환경: 4417 (포트 구분)
                             # 운영환경: 4317 (표준 포트 사용 권장)
     tls:
       insecure: true        # TLS 비활성화 (내부 Docker 네트워크용)

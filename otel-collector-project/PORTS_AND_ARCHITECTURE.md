@@ -13,11 +13,11 @@
 │  Spring Boot    │    │ OpenTelemetry   │    │ Grafana Tempo   │
 │  Applications   │    │   Collector     │    │                 │
 │                 │    │                 │    │                 │
-│ OTLP → 4317 ────┼────┼→ 4317 → 9095 ───┼────┼→ 9095 (gRPC)   │
-│ OTLP → 4318 ────┼────┼→ 4318 → 3201 ───┼────┼→ 3201 (HTTP)   │
+│ OTLP → 4317 ────┼────┼→ 4317 → 4417 ───┼────┼→ 4417 (gRPC)   │
+│ OTLP → 4318 ────┼────┼→ 4318 → 4418 ───┼────┼→ 4418 (HTTP)   │
 │                 │    │                 │    │                 │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
-  localhost:8080         localhost:4317/4318   localhost:9095/3201
+  localhost:8080         localhost:4317/4318   localhost:4417/4418
 ```
 
 ### 실제 운영 환경
@@ -53,9 +53,9 @@
 | 내부 포트 | 외부 포트 | 프로토콜 | 용도 |
 |----------|----------|----------|------|
 | 3200 | 3200 | HTTP | Tempo UI 및 Query API |
-| 9095 | 9095 | gRPC | OTLP gRPC 수신 (Collector에서 전송) |
-| 3201 | 3201 | HTTP | OTLP HTTP 수신 (Collector에서 전송) |
-| 9096 | N/A | gRPC | Tempo 내부 서비스 (외부 노출 안함) |
+| 4417 | 4417 | gRPC | OTLP gRPC 수신 (Collector에서 전송) |
+| 4418 | 4418 | HTTP | OTLP HTTP 수신 (Collector에서 전송) |
+| 9095 | N/A | gRPC | Tempo 내부 서비스 (외부 노출 안함) |
 
 ### 포트 충돌과 해결책
 
@@ -63,12 +63,12 @@
 개발 환경에서 모든 서비스가 하나의 Docker Compose 파일에 정의되어 있어 포트 충돌이 발생:
 
 1. **Collector**와 **Tempo** 모두 4317/4318 포트를 사용하려고 함
-2. **Tempo**의 server gRPC(9095)와 distributor OTLP gRPC(9095)가 충돌
+2. **Tempo**의 server gRPC와 distributor OTLP gRPC가 같은 포트를 사용하려고 함
 
 #### 해결책
 1. **Collector**: 표준 포트 4317/4318 유지 (애플리케이션 연결점)
-2. **Tempo**: 다른 포트 사용 (9095/3201)
-3. **Tempo 내부 서비스**: 별도 포트 사용 (9096)
+2. **Tempo**: 구분 가능한 포트 사용 (4417/4418)
+3. **Tempo 내부 서비스**: 별도 포트 사용 (9095)
 
 ## 설정 파일별 포트 설정
 
@@ -84,23 +84,23 @@ receivers:
 
 exporters:
   otlp/tempo:
-    endpoint: tempo:9095      # Tempo OTLP gRPC 포트
+    endpoint: tempo:4417      # Tempo OTLP gRPC 포트
 ```
 
 ### tempo-config.yaml
 ```yaml
 server:
   http_listen_port: 3200      # Tempo UI/API (표준)
-  grpc_listen_port: 9096      # Tempo 내부 gRPC 서비스
+  grpc_listen_port: 9095      # Tempo 내부 gRPC 서비스
 
 distributor:
   receivers:
     otlp:
       protocols:
         grpc:
-          endpoint: 0.0.0.0:9095  # Collector에서 받는 OTLP gRPC
+          endpoint: 0.0.0.0:4417  # Collector에서 받는 OTLP gRPC
         http:
-          endpoint: 0.0.0.0:3201  # Collector에서 받는 OTLP HTTP
+          endpoint: 0.0.0.0:4418  # Collector에서 받는 OTLP HTTP
 ```
 
 ### docker-compose.yaml
@@ -113,8 +113,8 @@ otel-collector:
 tempo:
   ports:
     - "3200:3200"  # Tempo UI
-    - "9095:9095"  # OTLP gRPC (Collector → Tempo)
-    - "3201:3201"  # OTLP HTTP (Collector → Tempo)
+    - "4417:4417"  # OTLP gRPC (Collector → Tempo)
+    - "4418:4418"  # OTLP HTTP (Collector → Tempo)
 ```
 
 ## 운영 환경 권장 설정
@@ -164,7 +164,7 @@ management:
 
 ### 트레이스 데이터 흐름
 1. **Spring Boot App** → OTLP (4317/4318) → **Collector**
-2. **Collector** → 샘플링/배치 처리 → OTLP (9095/3201) → **Tempo**
+2. **Collector** → 샘플링/배치 처리 → OTLP (4417/4418) → **Tempo**
 3. **Tempo** → 저장 → **Grafana**에서 조회
 
 ### 로그 데이터 흐름
