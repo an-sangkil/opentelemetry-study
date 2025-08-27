@@ -34,7 +34,7 @@ services:
       - tempo-data:/tmp/tempo/traces # 트레이스 데이터를 저장할 볼륨
     ports:
       - "3200:3200" # Tempo UI 및 HTTP 포트
-      #- "4317:4317" # OTLP gRPC 수신 포트 (Collector가 데이터를 보낼 포트) , otel-collector 에서 사용함으로 주석처리
+      - "9095:9095" # OTLP gRPC 수신 포트 (Collector가 데이터를 보낼 포트) , otel-collector 에서 사용함으로 주석처리
       - "55680:55680" # OpenCensus receiver (선택적)
     healthcheck:
       test: ["CMD", "wget", "-qO-", "localhost:3200/ready"]

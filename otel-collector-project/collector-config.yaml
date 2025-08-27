@@ -9,6 +9,12 @@ receivers:
 
 # Processors: 수신된 데이터를 처리하는 단계 정의
 processors:
+  # 배치 처리를 통한 성능 최적화
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+    send_batch_max_size: 2048
+
   tail_sampling:
     decision_wait: 5s # 트레이스 완료를 기다리는 최대 시간 (트레이스가 완전히 수신될 때까지 대기)
     num_traces: 100000 # 동시에 처리할 수 있는 최대 트레이스 수
@@ -29,11 +35,14 @@ processors:
 # Exporters: 처리된 데이터를 외부 시스템으로 내보내는 방식 정의
 exporters:
   # Grafana Tempo로 OTLP gRPC 프로토콜을 사용하여 내보내기
-  otlp:
-    endpoint: tempo:4317 # Docker Compose에서 Tempo 서비스 이름이 'tempo'이고 OTLP gRPC 포트가 4317이라고 가정
+  otlp/tempo:
+    endpoint: tempo:9095
     tls:
-      insecure: true # 개발 환경에서 TLS 비활성화 (운영 시에는 구성 필요)
+      insecure: true
 
+  # Grafana Loki로 OTLP HTTP 프로토콜을 사용하여 로그 전송
+  otlphttp:
+    endpoint: http://loki:3100/loki/api/v1/push
 
   # 디버그 출력 (테스트용)
   debug:
@@ -47,7 +56,7 @@ service:
     traces:
       receivers: [otlp]
       processors: [tail_sampling] # tail_sampling 프로세서 적용
-      exporters: [otlp] # OTLP 익스포터를 통해 Tempo로 전송
+      exporters: [otlp/tempo] # OTLP gRPC 익스포터를 통해 Tempo로 전송
     
     # 메트릭 파이프라인 추가
     metrics:
@@ -57,4 +66,5 @@ service:
     # 로그 파이프라인 추가
     logs:
       receivers: [otlp]
-      exporters: [file, debug] # 파일과 디버그 출력으로 로그 전송
+      processors: [batch]
+      exporters: [otlphttp, file, debug] # Loki, 파일, 디버그 출력으로 로그 전송
