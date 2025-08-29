@@ -78,6 +78,8 @@ exporters:
   # 로그 중앙화 및 Grafana에서 통합 조회를 위함
   otlphttp:
     endpoint: http://loki:3100/loki/api/v1/push  # Loki의 로그 수신 API 엔드포인트
+    tls:
+      insecure: true
 
   # Debug Exporter: 콘솔에 디버그 정보 출력 (개발/테스트 용도)
   # 트러블슈팅 시 데이터 흐름 확인에 유용
@@ -104,7 +106,7 @@ service:
     # CPU, 메모리, 응답시간 등의 정량적 지표 수집
     metrics:
       receivers: [otlp]           # OTLP 프로토콜로 메트릭 수신
-      exporters: [file]           # 현재는 파일로만 저장 (추후 Prometheus 연결 가능)
+      exporters: [debug]          # 현재는 파일로만 저장 (추후 Prometheus 연결 가능) [file, prometheus, debug]
     
     # 로그 파이프라인: 애플리케이션 로그 데이터 처리
     # 구조화된 로그 메시지 수집 및 중앙 집중화
