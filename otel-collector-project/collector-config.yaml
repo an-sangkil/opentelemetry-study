@@ -76,8 +76,8 @@ exporters:
 
   # Grafana Loki Exporter: 로그 데이터를 Loki로 전송
   # 로그 중앙화 및 Grafana에서 통합 조회를 위함
-  otlphttp:
-    endpoint: http://loki:3100/loki/api/v1/push  # Loki의 로그 수신 API 엔드포인트
+  otlphttp/logs:
+    endpoint: http://loki:3100/otlp  # Loki의 OTLP 수신 엔드포인트
     tls:
       insecure: true
 
@@ -113,7 +113,7 @@ service:
     logs:
       receivers: [otlp]           # OTLP 프로토콜로 로그 수신
       processors: [batch]         # 배치 처리로 전송 효율성 향상
-      exporters: [otlphttp, file, debug]  # 다중 출력:
+      exporters: [otlphttp/logs, file, debug]  # 다중 출력:
                                  # - otlphttp: Loki로 전송 (중앙 로그 저장소)
                                  # - file: 로컬 파일 백업
                                  # - debug: 콘솔 출력 (디버깅용)
