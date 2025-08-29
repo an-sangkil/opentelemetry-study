@@ -10,6 +10,10 @@ eureka:
 # Micrometer OTLP 설정  
 management:
   otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces  # HTTP endpoint
+      export:
+        enabled: true
     metrics:
       export:
         enabled: true
