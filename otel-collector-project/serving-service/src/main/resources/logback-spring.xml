@@ -12,13 +12,7 @@
 
     <!-- OpenTelemetry OTLP appender -->
     <appender name="OTLP" class="io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender">
-        <endpoint>http://localhost:4318</endpoint><!-- http -->
-        <!-- <endpoint>localhost:4317</endpoint> gRpc-->
-        <captureExperimentalAttributes>true</captureExperimentalAttributes>
-        <captureKeyValuePairAttributes>true</captureKeyValuePairAttributes>
-        <captureLoggerContext>true</captureLoggerContext>
-        <captureMarkerAttribute>true</captureMarkerAttribute>
-        <captureMdcAttributes>true</captureMdcAttributes>
+        <!-- OpenTelemetryAppender.install()에 의해 자동으로 설정됨 -->
     </appender>
 
     <!-- 루트 로거 설정 -->
@@ -27,9 +21,4 @@
         <appender-ref ref="OTLP"/>
     </root>
 
-    <!-- 특정 패키지 로그 레벨 설정 -->
-    <logger name="com.example" level="DEBUG" additivity="false">
-        <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="OTLP"/>
-    </logger>
 </configuration>

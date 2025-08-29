@@ -11,9 +11,11 @@ dependencies {
     // tracing , log
     implementation 'io.opentelemetry:opentelemetry-exporter-otlp' // 트레이스 전송 전용 (요청 흐름, 스팬 정보 등)
     implementation 'io.micrometer:micrometer-tracing-bridge-otel' // Tracing-Log 연동
-    runtimeOnly 'io.micrometer:micrometer-registry-otlp'        // 메트릭 전송 전용 (CPU, 메모리, HTTP 요청 수 등) 직접전송
+    runtimeOnly 'io.micrometer:micrometer-registry-otlp'          // 메트릭 전송 전용 (CPU, 메모리, HTTP 요청 수 등) 직접전송
     //runtimeOnly 'io.micrometer:micrometer-registry-prometheus'    // 메트릭 전송 전용 (CPU, 메모리, HTTP 요청 수 등) Prometheus 서버에서 등록 하여 가져가야함
-    implementation 'io.opentelemetry.instrumentation:opentelemetry-logback-appender-1.0:2.19.0-alpha' // 로그 전송
+    def OTEL_LOGBACK_VERSION = "2.5.0-alpha"
+    implementation "io.opentelemetry.instrumentation:opentelemetry-logback-appender-1.0:$OTEL_LOGBACK_VERSION" // 로그 전송
+
 }
 
 test {
