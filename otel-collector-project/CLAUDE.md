@@ -18,7 +18,7 @@ The system consists of 6 main components:
 1. **eureka-server** (port varies) - Service discovery registry
 2. **api-gateway** (port 80) - Spring Cloud Gateway routing requests to services
 3. **campaign-service** (port 8080) - Business service using pure OpenTelemetry SDK
-4. **serving-service** (port 8080) - Business service using Micrometer + OpenTelemetry bridge
+4. **serving-service** (port 8081) - Business service using Micrometer + OpenTelemetry bridge
 5. **user-service** (port varies) - Basic user management service
 6. **OpenTelemetry Infrastructure** - Collector, Tempo, and Grafana for observability
 

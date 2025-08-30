@@ -6,12 +6,11 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
+    // tracing, log
     // Micrometer OpenTelemetry 브릿지 방식
     implementation 'io.micrometer:micrometer-tracing-bridge-otel'
     implementation 'io.opentelemetry:opentelemetry-exporter-otlp'
 
-
-    
     // 기존 Prometheus는 유지 actuator 에서 사용
     runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
     

@@ -34,14 +34,23 @@ runtimeOnly 'io.micrometer:micrometer-registry-prometheus' // Prometheus 메트�
 - **OTLP 방식**: Push 방식으로 OpenTelemetry Collector에 메트릭 전송
 - **Prometheus 방식**: Pull 방식으로 `/actuator/prometheus` 엔드포인트 노출
 
-### 3. 로그 전송
+### 3. 로그 전송 (Loki 통합)
 ```gradle
 implementation 'io.opentelemetry.instrumentation:opentelemetry-logback-appender-1.0:2.19.0-alpha'
 ```
-- OpenTelemetry Logback Appender를 통한 OTLP 로그 전송
-- `logback-spring.xml` 설정을 통한 콘솔과 OTLP 이중 출력
-- 트레이스 ID와 스팬 ID가 자동으로 로그에 포함
-- Micrometer와 OpenTelemetry 하이브리드 방식으로 완전한 관측 가능성 구현
+
+#### 1. Alpha 버전 사용 이유
+OpenTelemetry 로그 표준이 Tracing, Metrics 대비 늦게 시작되어 현재 발전 단계에 있기 때문입니다. 하지만 기능적으로는 완전하며, OTLP 프로토콜 지원, 메타데이터 수집, 트레이스 연동 등 모든 핵심 기능을 제공합니다. 많은 대규모 서비스에서 프로덕션 환경에 활용하고 있어 안정성이 검증되었습니다.
+
+#### 2. 로그 전송 방식
+- **이중 출력 방식**: 콘솔 + OTLP 동시 로깅
+- **트레이스 연동**: Micrometer 트레이스 ID/스팬 ID가 자동으로 로그에 포함
+- **중앙 집중화**: OpenTelemetry Collector → Loki → Grafana 파이프라인
+
+#### 3. 구성 요소
+- **프로그래밍 설정**: `OpenTelemetryLoggingConfig`에서 런타임 설정
+- **구조화된 로그**: JSON 형태로 메타데이터와 함께 전송
+- **완전한 관측성**: Traces(Tempo) + Metrics(Prometheus) + Logs(Loki) 통합
 
 ## 설정 구성
 
@@ -51,33 +60,131 @@ spring:
   application:
     name: serving-service
 
+# Eureka 서비스 디스커버리 설정
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+
+# Micrometer + OpenTelemetry 통합 설정
+management:
+  # OTLP 프로토콜 설정
+  otlp:
+    # 분산 추적 설정
+    tracing:
+      endpoint: http://localhost:4318/v1/traces  # HTTP 방식 사용
+      export:
+        enabled: true
+    # 메트릭 전송 설정  
+    metrics:
+      export:
+        enabled: false  # 로그 테스트를 위해 임시 비활성화
+        url: http://localhost:4318/v1/metrics
+        step: 10s       # 메트릭 수집 주기
+    # 로그 전송 설정
+    logging:
+      export:
+        enabled: true
+      endpoint: http://localhost:4318/v1/logs
+  
+  # 트레이스 샘플링 설정
+  tracing:
+    sampling:
+      probability: 1.0  # 100% 트레이스 수집 (개발환경)
+  
+  # Spring Boot Actuator 엔드포인트 노출
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+
+# 로깅 레벨 설정
 logging:
   level:
     root: info
-    com.example: debug
+    org.springframework.boot: info
+    com.example: debug  # 애플리케이션 패키지 디버그 레벨
+    io.opentelemetry.instrumentation.logback.appender.v1_0: trace  # OTLP Appender 상세 로그
 ```
+
+#### 🔧 설정 세부 설명
+
+##### OTLP 엔드포인트 선택
+- **트레이스/메트릭/로그**: HTTP 방식 (4318 포트) 사용
+- **선택 이유**: gRPC(4317)보다 HTTP가 더 안정적이고 디버깅 용이
+- **Collector 연결**: 모든 데이터가 OpenTelemetry Collector를 거쳐 백엔드로 전송
+
+##### 샘플링 전략
+- **개발환경**: `probability: 1.0` (100% 수집)
+- **운영환경 권장**: `probability: 0.1` (10% 샘플링)
+
+##### 로그 레벨 최적화
+- **애플리케이션**: DEBUG 레벨로 상세 로그
+- **OTLP Appender**: TRACE 레벨로 전송 상태 확인
+- **Spring Boot**: INFO 레벨로 노이즈 감소
 
 ### logback-spring.xml
 ```xml
-<appender name="OTLP" class="io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender">
-    <endpoint>http://localhost:4317</endpoint>
-    <captureExperimentalAttributes>true</captureExperimentalAttributes>
-    <captureKeyValuePairAttributes>true</captureKeyValuePairAttributes>
-    <captureLoggerContext>true</captureLoggerContext>
-    <captureMarkerAttribute>true</captureMarkerAttribute>
-    <captureMdcAttributes>true</captureMdcAttributes>
-</appender>
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Spring Boot 기본 설정 포함 -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    
+    <!-- 콘솔 appender (트레이스 ID 포함) -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %clr(%-5level) %clr([${spring.application.name:-}]){yellow} %clr([%15.15t]){faint} %clr([%X{traceId:-},%X{spanId:-}]){magenta} %clr(%-40.40logger{39}){cyan} : %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- OpenTelemetry OTLP appender (프로그래밍 방식 설정) -->
+    <appender name="OTLP" class="io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender">
+        <!-- OpenTelemetryAppender.install()에 의해 자동으로 설정됨 -->
+        <!-- 엔드포인트 및 속성은 OpenTelemetryLoggingConfig에서 프로그래밍 방식으로 설정 -->
+    </appender>
+
+    <!-- 루트 로거: 콘솔과 OTLP 동시 출력 -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>  <!-- 개발 시 콘솔 확인용 -->
+        <appender-ref ref="OTLP"/>     <!-- 중앙 집중 로그 수집용 -->
+    </root>
+</configuration>
 ```
 
-#### ⚠️ 중요: gRPC 엔드포인트 설정
-OpenTelemetry에서 gRPC 연결시 스키마 사용법:
-- ✅ `http://localhost:4317` - insecure gRPC 연결 (올바름)
-- ✅ `https://localhost:4317` - secure gRPC 연결 (TLS)
-- ❌ `grpc://localhost:4317` - OpenTelemetry 표준에서 사용하지 않음
+#### 🔧 프로그래밍 방식 OpenTelemetry 설정
+실제 OTLP 엔드포인트와 속성은 `OpenTelemetryLoggingConfig.java`에서 설정:
+
+```java
+@Configuration
+public class OpenTelemetryLoggingConfig {
+    
+    @PostConstruct
+    public void configureOpenTelemetryLogging() {
+        // OpenTelemetry 인스턴스 설정
+        OpenTelemetry openTelemetry = OpenTelemetry.noop(); // 실제로는 자동설정된 인스턴스 사용
+        
+        // Logback Appender 설정
+        OpenTelemetryAppender.install(openTelemetry,
+            OpenTelemetryAppender.builder()
+                .setCaptureExperimentalAttributes(true)
+                .setCaptureKeyValuePairAttributes(true) 
+                .setCaptureLoggerContext(true)
+                .setCaptureMarkerAttribute(true)
+                .setCaptureMdcAttributes(true)
+                .build());
+    }
+}
+```
+
+#### ⚠️ 중요: OTLP 엔드포인트 자동 설정
+- **엔드포인트**: OpenTelemetry 자동 설정에 의해 `http://localhost:4317` 사용
+- **프로토콜**: gRPC (하지만 `http://` 스키마 사용)
+- **트레이스 연동**: Micrometer에서 설정한 트레이스 ID/스팬 ID가 자동으로 로그에 포함
+- **서비스 이름**: `spring.application.name` 값이 자동으로 서비스 레이블로 설정
 
 **포트별 프로토콜**:
-- **4317**: gRPC (하지만 `http://` 스키마 사용)
-- **4318**: HTTP REST API
+- **4317**: OTLP gRPC (insecure, `http://` 스키마)
+- **4318**: OTLP HTTP REST API
 
 ## 아키텍처 선택 배경
 
@@ -99,15 +206,70 @@ OpenTelemetry에서 gRPC 연결시 스키마 사용법:
 - OpenTelemetry 표준 완전 준수 어려움
 - 로그 전송을 위한 별도 설정 필요
 
+## Loki 로그 통합 아키텍처
+
+### 로그 수집 및 중앙화 전략
+Serving Service는 **Grafana Loki**와의 통합을 통해 중앙 집중식 로그 관리를 구현합니다.
+
+#### Loki 통합 방식
+```mermaid
+graph LR
+    A[Serving Service] --> B[Logback-Spring]
+    B --> C[OpenTelemetry Appender]
+    C --> D[OTLP gRPC 4317]
+    D --> E[OpenTelemetry Collector]
+    E --> F[Loki 3100/otlp]
+    F --> G[Grafana Dashboard]
+```
+
+### Loki 설정 세부사항
+
+#### 1. 로그 전송 경로
+- **애플리케이션** → OpenTelemetry Logback Appender
+- **OTLP gRPC** → OpenTelemetry Collector (포트 4317)
+- **Collector** → Loki (포트 3100/otlp 엔드포인트)
+- **Grafana** → Loki 쿼리 (통합 대시보드)
+
+#### 2. 트레이스 연동
+- **트레이스 ID**: 자동으로 로그에 포함되어 분산 추적과 연동
+- **스팬 ID**: 특정 작업과 로그를 직접 연결
+- **서비스 이름**: Loki 레이블로 자동 분류
+
+#### 3. 로그 레벨별 처리
+```yaml
+# application.yml 설정 예시
+logging:
+  level:
+    root: info
+    com.example: debug
+    org.springframework: warn
+```
+
+#### 4. Loki 라벨 구조
+```json
+{
+  "service_name": "serving-service",
+  "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+  "span_id": "00f067aa0ba902b7",
+  "level": "INFO|WARN|ERROR",
+  "logger_name": "com.example.ServingController"
+}
+```
+
 ## 데이터 흐름
 
-```리드 
+```ascii
 Serving Service
-    ├── 트레이스 → micrometer-tracing-bridge-otel → OTLP → OpenTelemetry Collector
+    ├── 트레이스 → micrometer-tracing-bridge-otel → OTLP → OpenTelemetry Collector → Tempo
     ├── 메트릭 → micrometer-registry-otlp → OTLP → OpenTelemetry Collector
     │         → micrometer-registry-prometheus → /actuator/prometheus → Prometheus
-    └── 로그 → opentelemetry-logback-appender → OTLP → OpenTelemetry Collector
+    └── 로그 → opentelemetry-logback-appender → OTLP → OpenTelemetry Collector → Loki → Grafana
 ```
+
+### Observability 3 Pillars 통합
+1. **Traces**: Tempo에 저장, 분산 추적 분석
+2. **Metrics**: Prometheus/OTLP로 이중 수집
+3. **Logs**: Loki에 중앙 집중화, 트레이스 ID 자동 연동
 
 ## 실행 방법
 ```bash
@@ -115,6 +277,28 @@ Serving Service
 ```
 
 ## 모니터링 엔드포인트
-- **Prometheus 메트릭**: `http://localhost:8080/actuator/prometheus`
-- **Health Check**: `http://localhost:8080/actuator/health`
+
+### 애플리케이션 엔드포인트
+- **Prometheus 메트릭**: `http://localhost:8081/actuator/prometheus`
+- **Health Check**: `http://localhost:8081/actuator/health`
 - **Eureka 등록 정보**: Eureka Server에서 확인 가능
+
+### 관측 가능성 대시보드
+- **Grafana UI**: `http://localhost:3000` (트레이스, 메트릭, 로그 통합 대시보드)
+- **Tempo UI**: `http://localhost:3200` (순수 트레이스 조회)
+- **Loki API**: `http://localhost:3100` (로그 데이터 직접 조회)
+
+### Loki 로그 쿼리 예시
+```logql
+# 서비스별 로그 조회
+{service_name="serving-service"}
+
+# 특정 트레이스 ID로 로그 추적
+{service_name="serving-service"} |= "4bf92f3577b34da6a3ce929d0e0e4736"
+
+# 에러 로그만 필터링
+{service_name="serving-service"} | json | level="ERROR"
+
+# 시간 범위별 로그 집계
+sum by (level) (count_over_time({service_name="serving-service"}[5m]))
+```
