@@ -13,6 +13,33 @@ eureka:
     serviceUrl:
       defaultZone: http://localhost:8761/eureka/
 
+# Micrometer + OpenTelemetry 통합 설정 (serving-service와 동일한 Trace ID 전파)
+management:
+  # OTLP 프로토콜 설정
+  otlp:
+    # 분산 추적 설정
+    tracing:
+      endpoint: http://localhost:4318/v1/traces  # HTTP 방식 사용
+      export:
+        enabled: true
+    # 메트릭 전송 설정  
+    metrics:
+      export:
+        enabled: true
+        url: http://localhost:4318/v1/metrics
+        step: 10s       # 메트릭 수집 주기
+  
+  # 트레이스 샘플링 설정
+  tracing:
+    sampling:
+      probability: 1.0  # 100% 트레이스 수집 (개발환경)
+  
+  # Spring Boot Actuator 엔드포인트 노출
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+
 logging:
   level:
     root: info
