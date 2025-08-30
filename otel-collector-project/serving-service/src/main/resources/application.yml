@@ -25,7 +25,9 @@ management:
       endpoint: http://localhost:4318/v1/logs
   tracing:
     sampling:
-      probability: 1.0
+      probability: 1.0  # 100% 트레이스 수집 (개발환경)
+    # 트레이스 전파 설정 (RestTemplate, WebClient 등에 자동 적용)
+    enabled: true
 
   endpoints:
     web:
