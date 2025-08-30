@@ -1,6 +1,8 @@
 package com.example;
 
 
+import com.example.servingservice.config.SpringUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
@@ -20,10 +22,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 @RestController
 public class ServingController {
 
-  
+
+    private final SpringUtils springUtils;
     private final RestTemplate restTemplate;
 
-    public ServingController(RestTemplate restTemplate) {
+    public ServingController(SpringUtils springUtils, RestTemplate restTemplate) {
+        this.springUtils = springUtils;
         this.restTemplate = restTemplate;
     }
 
@@ -44,10 +48,14 @@ public class ServingController {
         try {
             userInfo = restTemplate.getForObject(userServiceUrl, String.class);
         } catch (Exception e) {
-            log.error("Failed to fetch user info from user-service", e);
+            //log.error("Failed to fetch user info from user-service", e);
+            String applicationName = springUtils.getServiceName();
+            log.error("failed to fetch user info from {} exception={} stacktrace={}", applicationName, e.getMessage(), ExceptionUtils.getStackTrace(e));
             userInfo = "User info not available";
         }
 
         return ResponseEntity.ok("Serving request successfully! User info: " + userInfo);
     }
+
+
 }
