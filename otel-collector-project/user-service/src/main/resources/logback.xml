@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
+        <http>
+            <url>http://${LOKI_IP}:3100/loki/api/v1/push</url>
+             <useProtobufApi>false</useProtobufApi>
+            <sender class="com.github.loki4j.logback.ApacheHttpSender" />
+            <requestTimeoutMs>10000</requestTimeoutMs>
+        </http>
+        <message>
+            <pattern>%-5level [%thread] %logger{20} [trace=%X{traceId:-},span=%X{spanId:-}] - %msg%n</pattern>
+        </message>
+        <labels>
+            service_name = ${LOKI_SERVICE:-user-service}
+            host = ${HOSTNAME:-my-hostname}
+            level = %level
+            env = ${LOKI_ENV:-development}
+            traceId =  %X{traceId:-}
+            spanId = %X{spanId:-}
+        </labels>
+        <structuredMetadata>off</structuredMetadata>
+        <batch>
+            <maxItems>100</maxItems>
+            <timeoutMs>1000</timeoutMs>
+        </batch>
+        <verbose>true</verbose>
+    </appender>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %clr(%-5level) %clr([${spring.application.name:-}]){yellow} %clr([%15.15t]){faint} %clr([%X{traceId:-},%X{spanId:-}]){magenta} %clr(%-40.40logger{39}){cyan} : %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="LOKI"/>
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+</configuration>

@@ -1,0 +1,6 @@
+### GET request to example server
+GET https://examples.http-client.intellij.net/get
+    ?generated-in=IntelliJ IDEA
+
+### 사용자 정보 조회 요청
+GET http://127.0.0.1:8083/user/v1/info
