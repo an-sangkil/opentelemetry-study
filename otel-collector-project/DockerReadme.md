@@ -95,6 +95,13 @@ Grafana 데이터소스 자동 설정 (Tempo, Loki)
 
 ## 🛑 환경 관리
 
+### 컨테이터 서비스 시작 
+```shell
+# 모든 서비스 시작 
+docker-compose -p otel-monitoring-stack up -d
+# -p: 프로젝트 이름 설정 otel-monitoring-stack 
+```
+
 ### 전체 환경 종료
 ```bash
 # 모든 서비스 종료
@@ -126,6 +133,8 @@ docker-compose up -d --force-recreate tempo
 # 옵션 설명:
 # -d: 백그라운드에서 실행 (detached 모드)
 # --force-recreate: 기존 컨테이너를 강제로 삭제하고 새로 생성
+
+
 
 # 특정 컨테이너 삭제 후 재생성
 docker-compose rm -sf tempo        # 컨테이너 강제 삭제
